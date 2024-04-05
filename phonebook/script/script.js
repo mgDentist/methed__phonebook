@@ -25,7 +25,8 @@ const data = [
 
 {
   const addContactData = (contact) => {
-    data.push(contact);
+    // data.push(contact); убрал тк не работаем с массивом напрямую, а юзаем localStorage
+    setStorage('contacts', contact); 
   };
   const createContainer = () => {
     const container = document.createElement('div');
@@ -305,7 +306,10 @@ const data = [
     list.addEventListener('click', e => {
       const target = e.target;
       if (target.closest('.del-icon')) {
-        target.closest('.contact').remove();
+        const contactRow = target.closest('.contact');
+        const phone = contactRow.querySelector('a').textContent;
+        removeStorage(phone);
+        contactRow.remove();
       }
     });
   };
@@ -327,18 +331,46 @@ const data = [
     });
   };
 
+  const getStorage = (key) => {
+    const data = localStorage.getItem(key);
+    
+    return data ? JSON.parse(data) : [];
+  };
+
+  const setStorage = (key, obj) => {
+    const data = getStorage(key);
+
+    data.push(obj);
+    localStorage.setItem(key, JSON.stringify(data));
+  };
+
+  const removeStorage = (tel) => {
+    const key = 'contacts';
+    const data = getStorage(key);
+    const filteredData = data.filter(contact => contact.phone !== tel);
+
+    localStorage.setItem(key, JSON.stringify(filteredData));
+  }
+
   const init = (selectorApp, title) => {
     const app = document.querySelector(selectorApp);
 
+    const storedContacts = getStorage('contacts');
+    if (storedContacts.length === 0) {
+      data.forEach(contact => setStorage('contacts', contact));
+    }
+
+    const dataToRender = getStorage('contacts');
+
     const { list, logo, btnAdd, formOverlay, form, btnDel } = renderPhoneBook(app, title);
 
-    const allRow = renderContacts(list, data);
+    const allRow = renderContacts(list, dataToRender);
 
     const {closeModal} = modalControl(btnAdd, formOverlay);
 
     hoverRow(allRow, logo);
     deleteControl(btnDel, list);
-    formControl(form, list, closeModal);
+    formControl(form, list, closeModal, setStorage, removeStorage);
   };
 
 
